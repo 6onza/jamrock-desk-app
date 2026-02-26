@@ -132,6 +132,8 @@ export async function downloadAndInstall(
     // ── Step 1: Listen for download progress from Rust ──
     notify('downloading', 0, 'Iniciando descarga...')
 
+    console.log('[Updater] Starting download from:', downloadUrl)
+
     unlisten = await listen<RustDownloadProgress>(
       'update-download-progress',
       (event) => {
@@ -146,6 +148,7 @@ export async function downloadAndInstall(
       url: downloadUrl,
     })
 
+    console.log('[Updater] Download complete, installer at:', installerPath)
     notify('launching', 96, 'Descarga completa. Iniciando instalador...')
 
     // ── Step 3: Launch the NSIS installer via Rust ──
@@ -159,8 +162,14 @@ export async function downloadAndInstall(
     await new Promise((resolve) => setTimeout(resolve, 2000))
     await exit(0)
   } catch (err: unknown) {
+    // Tauri invoke errors come as plain strings, not Error objects
     const message =
-      err instanceof Error ? err.message : 'Error desconocido durante la actualización'
+      typeof err === 'string'
+        ? err
+        : err instanceof Error
+          ? err.message
+          : JSON.stringify(err)
+    console.error('[Updater] Download/install failed:', message, err)
     notify('error', 0, message)
     throw new Error(message)
   } finally {

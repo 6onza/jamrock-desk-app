@@ -127,7 +127,15 @@ async function handleInstallUpdate() {
       updateProgress.value = progress
     })
   } catch (err) {
-    updateError.value = err instanceof Error ? err.message : 'Error durante la actualización'
+    // Tauri invoke errors arrive as plain strings, not Error instances
+    const errorMsg =
+      typeof err === 'string'
+        ? err
+        : err instanceof Error
+          ? err.message
+          : JSON.stringify(err)
+    console.error('[Settings] Update failed:', errorMsg, err)
+    updateError.value = errorMsg
     updateProgress.value = null
     toast.error('La actualización falló. Intentá nuevamente.')
   }
