@@ -2,14 +2,15 @@
 // Custom update flow for unsigned Windows builds:
 //   1. Check backend for latest version
 //   2. Compare against local version (semver)
-//   3. Download new .exe to temp folder via Tauri FS
-//   4. Launch the NSIS installer
+//   3. Download new .exe via Rust command (reqwest — bypasses CORS)
+//   4. Launch the NSIS installer from Rust
 //   5. Close the current app
 //
 // Does NOT use @tauri-apps/plugin-updater (requires code signing).
+// Does NOT use browser fetch() for downloads (blocked by CORS).
 
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-shell'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { exit } from '@tauri-apps/plugin-process'
 import apiClient from './apiClient'
 
@@ -40,9 +41,17 @@ export interface UpdateProgress {
   message: string
 }
 
+/** Shape of the progress event emitted by the Rust download_update command. */
+interface RustDownloadProgress {
+  percent: number
+  downloaded: number
+  total: number
+  message: string
+}
+
 // ─── Helpers ───
 
-/** Get the current app version from the Rust side. */
+/** Get the current app version from the Rust side (reads tauri.conf.json). */
 async function getCurrentVersion(): Promise<string> {
   try {
     const info = await invoke<{ version: string }>('get_app_version')
@@ -53,6 +62,13 @@ async function getCurrentVersion(): Promise<string> {
 }
 
 // ─── Public API ───
+
+/**
+ * Get the app version string for display in the UI.
+ */
+export async function getAppVersion(): Promise<string> {
+  return getCurrentVersion()
+}
 
 /**
  * Check if a newer version is available on the backend.
@@ -95,7 +111,9 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
 /**
  * Download the .exe installer and launch it, then close the current app.
  *
- * The NSIS installer will handle the rest (overwrite files, restart).
+ * The download happens entirely on the Rust side via reqwest, which
+ * bypasses CORS restrictions that block browser fetch() in the webview.
+ * Progress is reported via Tauri events.
  *
  * @param downloadUrl - Direct URL to the .exe installer
  * @param onProgress  - Optional callback for UI progress updates
@@ -108,73 +126,47 @@ export async function downloadAndInstall(
     onProgress?.({ phase, percent, message })
   }
 
+  let unlisten: UnlistenFn | null = null
+
   try {
-    // ── Step 1: Download ──
-    notify('downloading', 0, 'Descargando actualización...')
+    // ── Step 1: Listen for download progress from Rust ──
+    notify('downloading', 0, 'Iniciando descarga...')
 
-    const response = await fetch(downloadUrl)
-    if (!response.ok) {
-      throw new Error(`Error de descarga: HTTP ${response.status}`)
-    }
+    unlisten = await listen<RustDownloadProgress>(
+      'update-download-progress',
+      (event) => {
+        notify('downloading', event.payload.percent, event.payload.message)
+      },
+    )
 
-    const contentLength = Number(response.headers.get('content-length') || 0)
-    const reader = response.body?.getReader()
-    if (!reader) throw new Error('No se pudo iniciar la descarga')
+    // ── Step 2: Download via Rust (reqwest — no CORS) ──
+    // This invokes the Rust command that streams the file to %TEMP%
+    // and returns the full path to the saved .exe.
+    const installerPath = await invoke<string>('download_update', {
+      url: downloadUrl,
+    })
 
-    const chunks: Uint8Array[] = []
-    let received = 0
+    notify('launching', 96, 'Descarga completa. Iniciando instalador...')
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-      received += value.length
-      if (contentLength > 0) {
-        const pct = Math.min(95, Math.round((received / contentLength) * 95))
-        notify('downloading', pct, `Descargando... ${pct}%`)
-      }
-    }
-
-    // Combine chunks into a single Uint8Array
-    const totalLength = chunks.reduce((sum, c) => sum + c.length, 0)
-    const bytes = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    notify('downloading', 95, 'Guardando instalador...')
-
-    // ── Step 2: Write to temp via Rust ──
-    // We use the Tauri FS plugin to write the downloaded bytes
-    // to the system's temp directory.
-    const { writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs')
-    const fileName = `JamrockAdmin-update-${Date.now()}.exe`
-    
-    await writeFile(fileName, bytes, { baseDir: BaseDirectory.Temp })
-
-    notify('launching', 98, 'Iniciando instalador...')
-
-    // ── Step 3: Launch the installer ──
-    // Build the full path in the temp directory
-    const { tempDir } = await import('@tauri-apps/api/path')
-    const tempPath = await tempDir()
-    const installerPath = `${tempPath}${fileName}`
-
-    // Open the installer using the shell plugin
-    await open(installerPath)
+    // ── Step 3: Launch the NSIS installer via Rust ──
+    // Uses std::process::Command — more reliable than shell open() for .exe
+    await invoke('launch_installer', { path: installerPath })
 
     notify('launching', 100, 'Cerrando aplicación...')
 
     // ── Step 4: Close the current app ──
-    // Give a small delay so the installer has time to start
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Small delay so the installer process has time to initialize
+    await new Promise((resolve) => setTimeout(resolve, 2000))
     await exit(0)
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : 'Error desconocido durante la actualización'
     notify('error', 0, message)
     throw new Error(message)
+  } finally {
+    // Always clean up the event listener
+    if (unlisten) {
+      unlisten()
+    }
   }
 }

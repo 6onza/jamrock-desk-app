@@ -11,6 +11,7 @@ import {
 import {
   checkForUpdates,
   downloadAndInstall,
+  getAppVersion,
   type UpdateCheckResult,
   type UpdateProgress,
 } from '@/services/updater'
@@ -49,13 +50,8 @@ onMounted(async () => {
     }
   }
 
-  // Load app version
-  try {
-    const info = await invoke<{ version: string }>('get_app_version')
-    appVersion.value = info.version
-  } catch {
-    appVersion.value = '0.1.0'
-  }
+  // Load app version from tauri.conf.json (via Rust)
+  appVersion.value = await getAppVersion()
 })
 
 // ─── Test connectivity to the entered URL ───
@@ -155,23 +151,6 @@ async function handleInstallUpdate() {
 
       <!-- Settings Card -->
       <div class="card space-y-6">
-        <!-- API URL -->
-        <div>
-          <label for="apiUrl" class="mb-1.5 block text-sm font-medium text-gray-400">
-            URL del API
-          </label>
-          <input
-            id="apiUrl"
-            v-model="apiUrl"
-            type="url"
-            class="input-field"
-            placeholder="https://jamrock-api.up.railway.app/api"
-          />
-          <p class="mt-1 text-xs text-gray-600">
-            URL base de la API de Jamrock (sin barra final)
-          </p>
-        </div>
-
         <!-- Action buttons -->
         <div class="flex gap-3">
           <button
@@ -214,8 +193,7 @@ async function handleInstallUpdate() {
 
       <!-- App info -->
       <div class="mt-6 space-y-1 text-center text-xs text-gray-600">
-        <p>Jamrock Admin v{{ appVersion }}</p>
-        <p>Tauri Desktop App</p>
+        <p>Jamrock Admin v{{ appVersion }}</p>URL base de la API de Jamrock (sin barra final)
       </div>
 
       <!-- Updates section -->

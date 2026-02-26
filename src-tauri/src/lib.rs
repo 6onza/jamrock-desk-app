@@ -4,6 +4,7 @@ use commands::auth;
 use commands::config;
 use commands::export;
 use commands::system;
+use commands::updater;
 use commands::window;
 
 use tauri::{
@@ -41,6 +42,9 @@ pub fn run() {
             system::get_app_version,
             // Export
             export::export_csv,
+            // Updater
+            updater::download_update,
+            updater::launch_installer,
             // Window
             window::save_window_state,
             window::get_window_state,
