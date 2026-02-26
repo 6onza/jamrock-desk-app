@@ -36,7 +36,7 @@ import type { StatsPeriod, OrderAnalyticsStats, UserStatisticsStats } from '@/ty
 import type { OrderStatusCounts } from '@/types/orders'
 import {
   ShoppingCart, DollarSign, Receipt, UserPlus, Home, CheckCircle,
-  Download, RefreshCw, Calendar, BarChart3, PieChart, Users, TrendingUp, ClipboardList,
+   RefreshCw, Calendar, BarChart3, PieChart, Users, TrendingUp, ClipboardList,
 } from 'lucide-vue-next'
 
 ChartJS.register(
@@ -55,7 +55,6 @@ ChartJS.register(
 // ─── State ───
 const isLoading = ref(false)
 const error = ref<string | null>(null)
-const isExporting = ref(false)
 
 const selectedPeriod = ref<StatsPeriod>('month')
 const customStart = ref('')
@@ -300,13 +299,6 @@ onMounted(() => {
     <!-- Header -->
     <PageHeader title="Estadísticas" subtitle="Métricas detalladas y reportes">
       <template #actions>
-        <button
-          class="rounded-lg bg-surface-700 px-3 py-1.5 text-xs text-gray-300 transition hover:bg-surface-600"
-          :disabled="isExporting || !orderStats"
-          @click="exportCSV"
-        >
-          <Download :size="14" class="inline" /> Exportar CSV
-        </button>
         <button
           class="rounded-lg bg-surface-700 px-3 py-1.5 text-xs text-gray-300 transition hover:bg-surface-600"
           :disabled="isLoading"
