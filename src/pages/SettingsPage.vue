@@ -157,52 +157,6 @@ async function handleInstallUpdate() {
         <h1 class="text-xl font-bold text-gray-100">Configuración</h1>
       </div>
 
-      <!-- Settings Card -->
-      <div class="card space-y-6">
-        <!-- Action buttons -->
-        <div class="flex gap-3">
-          <button
-            class="btn-secondary flex items-center gap-2"
-            :disabled="testing || !apiUrl"
-            @click="testConnection"
-          >
-            <RotateCw v-if="testing" :size="16" class="animate-spin" />
-            <Wifi v-else :size="16" />
-            {{ testing ? 'Testeando…' : 'Probar conexión' }}
-          </button>
-
-          <button
-            class="btn-primary flex items-center gap-2"
-            :disabled="saving || !apiUrl"
-            @click="saveSettings"
-          >
-            <Save :size="16" />
-            {{ saving ? 'Guardando…' : 'Guardar' }}
-          </button>
-        </div>
-
-        <!-- Connection result -->
-        <div
-          v-if="connectionResult"
-          class="rounded-lg border px-4 py-3 text-sm"
-          :class="
-            connectionResult.connected
-              ? 'border-green-500/30 bg-green-500/10 text-green-400'
-              : 'border-red-500/30 bg-red-500/10 text-red-400'
-          "
-        >
-          <div class="flex items-center gap-2">
-            <Wifi v-if="connectionResult.connected" :size="16" />
-            <WifiOff v-else :size="16" />
-            <span>{{ connectionResult.message }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- App info -->
-      <div class="mt-6 space-y-1 text-center text-xs text-gray-600">
-        <p>Jamrock Admin v{{ appVersion }}</p>URL base de la API de Jamrock (sin barra final)
-      </div>
 
       <!-- Updates section -->
       <div class="card mt-6 space-y-4">
