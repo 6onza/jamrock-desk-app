@@ -5,8 +5,6 @@ import { useToast } from 'vue-toastification'
 import { invoke } from '@tauri-apps/api/core'
 import {
   getBaseUrl,
-  updateApiBaseUrl,
-  checkApiConnection,
 } from '@/services/apiClient'
 import {
   checkForUpdates,
@@ -16,19 +14,15 @@ import {
   type UpdateProgress,
 } from '@/services/updater'
 import {
-  ArrowLeft, Wifi, WifiOff, Save, RotateCw, Download, CheckCircle,
+  ArrowLeft, Download, CheckCircle,
   AlertTriangle, RefreshCw,
 } from 'lucide-vue-next'
-import type { ConnectionTestResult } from '@/types/api'
 
 const router = useRouter()
 const toast = useToast()
 
 // ─── Form state ───
 const apiUrl = ref('')
-const testing = ref(false)
-const saving = ref(false)
-const connectionResult = ref<ConnectionTestResult | null>(null)
 const appVersion = ref('')
 
 // ─── Update state ───
@@ -54,37 +48,6 @@ onMounted(async () => {
   appVersion.value = await getAppVersion()
 })
 
-// ─── Test connectivity to the entered URL ───
-async function testConnection() {
-  testing.value = true
-  connectionResult.value = null
-
-  try {
-    const cleanUrl = apiUrl.value.replace(/\/+$/, '')
-    connectionResult.value = await checkApiConnection(cleanUrl)
-  } catch {
-    connectionResult.value = {
-      connected: false,
-      latency: null,
-      message: 'Error inesperado al testear la conexión',
-    }
-  } finally {
-    testing.value = false
-  }
-}
-
-// ─── Persist the new URL ───
-async function saveSettings() {
-  saving.value = true
-  try {
-    await updateApiBaseUrl(apiUrl.value)
-    toast.success('URL del API guardada correctamente')
-  } catch {
-    toast.error('Error al guardar la configuración')
-  } finally {
-    saving.value = false
-  }
-}
 
 function goBack() {
   router.back()

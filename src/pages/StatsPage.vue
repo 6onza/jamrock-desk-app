@@ -27,8 +27,6 @@ import {
 } from 'chart.js'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { save } from '@tauri-apps/plugin-dialog'
-import { writeTextFile } from '@tauri-apps/plugin-fs'
 
 import PageHeader from '@/components/ui/PageHeader.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -290,92 +288,6 @@ function changeLabel(change: number | null): string {
   return `${sign}${change.toFixed(1)}%`
 }
 
-// ─── CSV Export ───
-async function exportCSV() {
-  isExporting.value = true
-  try {
-    const s = orderStats.value
-    const u = userStats.value
-    const c = statusCounts.value
-    if (!s) return
-
-    const rows: string[][] = []
-
-    // Summary section
-    rows.push(['=== Resumen de Estadísticas ==='])
-    rows.push(['Período', selectedPeriod.value])
-    rows.push(['Generado', new Date().toISOString()])
-    rows.push([])
-    rows.push(['Métrica', 'Valor'])
-    rows.push(['Ventas totales', String(s.ventas)])
-    rows.push(['Ventas pagadas', String(s.ventas_pagadas)])
-    rows.push(['Facturación', String(s.facturacion)])
-    rows.push(['Ticket promedio', String(s.ticketPromedio)])
-    rows.push(['Cambio ventas (%)', String(s.changes?.ventas ?? '')])
-    rows.push(['Cambio facturación (%)', String(s.changes?.facturacion ?? '')])
-    rows.push(['Clientes nuevos', String(u?.period_customers ?? '')])
-    rows.push(['Clientes totales', String(u?.total_customers ?? '')])
-    rows.push([])
-
-    // Status counts
-    if (c) {
-      rows.push(['=== Pedidos por Estado ==='])
-      rows.push(['Estado', 'Cantidad'])
-      rows.push(['Pendiente', String(c.pending)])
-      rows.push(['Pagado', String(c.paid)])
-      rows.push(['Enviado', String(c.shipped)])
-      rows.push(['Cancelado', String(c.cancelled)])
-      rows.push([])
-    }
-
-    // Timeline
-    if (s.timeline.length > 0) {
-      rows.push(['=== Timeline de Facturación ==='])
-      rows.push(['Fecha', 'Facturación', 'Pedidos'])
-      for (const point of s.timeline) {
-        rows.push([point.date, String(point.value), String(point.orders)])
-      }
-      rows.push([])
-    }
-
-    // User timeline
-    if (u && u.timeline.length > 0) {
-      rows.push(['=== Timeline de Usuarios ==='])
-      rows.push(['Fecha', 'Nuevos registros'])
-      for (const point of u.timeline) {
-        rows.push([point.date, String(point.count)])
-      }
-    }
-
-    // Build CSV string
-    const csvContent = rows
-      .map((row) =>
-        row.map((cell) => {
-          // Escape cells containing commas or quotes
-          if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
-            return `"${cell.replace(/"/g, '""')}"`
-          }
-          return cell
-        }).join(','),
-      )
-      .join('\n')
-
-    // Open native "Save As" dialog
-    const filePath = await save({
-      defaultPath: `estadisticas_${selectedPeriod.value}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
-      filters: [{ name: 'CSV', extensions: ['csv'] }],
-    })
-
-    if (filePath) {
-      // Add BOM for Excel UTF-8 compatibility
-      await writeTextFile(filePath, '\uFEFF' + csvContent)
-    }
-  } catch (e) {
-    console.error('[StatsPage] CSV export failed:', e)
-  } finally {
-    isExporting.value = false
-  }
-}
 
 // ─── Lifecycle ───
 onMounted(() => {
