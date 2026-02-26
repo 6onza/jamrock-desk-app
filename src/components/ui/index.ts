@@ -1,0 +1,11 @@
+// Barrel export for all reusable UI components
+export { default as PageHeader } from './PageHeader.vue'
+export { default as DataTable } from './DataTable.vue'
+export { default as ConfirmDialog } from './ConfirmDialog.vue'
+export { default as StatusBadge } from './StatusBadge.vue'
+export { default as LoadingSpinner } from './LoadingSpinner.vue'
+export { default as EmptyState } from './EmptyState.vue'
+export { default as AppSidebar } from './AppSidebar.vue'
+export { default as AppTopbar } from './AppTopbar.vue'
+export { default as AppBreadcrumb } from './AppBreadcrumb.vue'
+export { default as ConnectionStatus } from './ConnectionStatus.vue'

@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────
+# Node / Frontend
+# ─────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+.cache/
+.npm/
+.yarn/
+pnpm-lock.yaml
+yarn-error.log
+npm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# ─────────────────────────────────────────
+# Tauri / Rust
+# ─────────────────────────────────────────
+src-tauri/target/
+src-tauri/gen/
+src-tauri/.cargo/
+src-tauri/Cargo.lock
+
+# Tauri updater / builds
+*.exe
+*.msi
+*.nsis
+*.app
+*.dmg
+*.deb
+*.rpm
+
+# ─────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────
+# IDEs
+# ─────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+
+# ─────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────
+logs/
+*.log
