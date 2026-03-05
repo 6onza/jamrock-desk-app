@@ -208,25 +208,6 @@ npm run build
 ### Error de CORS con el backend
 Verificá que `tauri://localhost` y `https://tauri.localhost` estén en `CORS_ALLOWED_ORIGINS` en el backend Django.
 
----
-
-## Checklist Pre-Distribución
-
-- [ ] API URL de producción configurada en `.env.production`
-- [ ] CORS del backend actualizado con orígenes Tauri
-- [ ] Íconos generados (`npx tauri icon`)
-- [ ] Version number actualizado en `package.json` + `tauri.conf.json`
-- [ ] Build exitoso sin errores (`npm run build`)
-- [ ] Testear: login, dashboard, CRUD productos, gestión pedidos
-- [ ] Testear: impresión, export CSV, notificaciones nativas
-- [ ] Testear: system tray, keyboard shortcuts, window state persistence
-- [ ] Generar signing keys para auto-updater
-- [ ] Configurar GitHub Secrets para CI/CD
-- [ ] Firmar el ejecutable (opcional, reduce warnings de SmartScreen)
-- [ ] Testear auto-updater con release de prueba
-
----
-
 ## Licencia
 
 Propietario — © 2026 JamRock GrowShop. Todos los derechos reservados.
