@@ -106,6 +106,10 @@ export const useProductsStore = defineStore('products', () => {
         : await productsService.createProduct(payload)
       return result
     } catch (err: unknown) {
+      // If queued offline, don't treat as error
+      if ((err as Record<string, unknown>)?.isOfflineQueued) {
+        return null
+      }
       const msg =
         err instanceof Error ? err.message : 'Error al guardar producto'
       error.value = msg
@@ -122,6 +126,12 @@ export const useProductsStore = defineStore('products', () => {
       totalCount.value = Math.max(0, totalCount.value - 1)
       return true
     } catch (err: unknown) {
+      // If queued offline, consider it will eventually succeed
+      if ((err as Record<string, unknown>)?.isOfflineQueued) {
+        products.value = products.value.filter((p) => p.id !== id)
+        totalCount.value = Math.max(0, totalCount.value - 1)
+        return true
+      }
       const msg =
         err instanceof Error ? err.message : 'Error al eliminar producto'
       error.value = msg
@@ -144,6 +154,14 @@ export const useProductsStore = defineStore('products', () => {
       }
       return true
     } catch (err: unknown) {
+      // If queued offline, update UI optimistically
+      if ((err as Record<string, unknown>)?.isOfflineQueued) {
+        const idx = products.value.findIndex((p) => p.id === id)
+        if (idx !== -1) {
+          ;(products.value[idx] as unknown as Record<string, unknown>)[field] = value
+        }
+        return true
+      }
       const msg =
         err instanceof Error ? err.message : 'Error al actualizar'
       error.value = msg

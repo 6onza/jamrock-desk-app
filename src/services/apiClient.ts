@@ -18,6 +18,8 @@ import {
 } from './secureStore'
 import { TIMEOUT_SETTINGS } from '@/types/api'
 import type { ConnectionTestResult } from '@/types/api'
+import { enqueueRequest } from './offlineDb'
+import type { OfflineHttpRequest } from '@/types/offline'
 
 // ═══════════════════════════════════════
 //  TOKEN REFRESH MUTEX
@@ -199,8 +201,59 @@ apiClient.interceptors.response.use(
       })
     }
 
-    // ── Network error ──
-    if (error.message === 'Network Error') {
+    // ── Network error on write → queue for offline replay ──
+    if (
+      error.message === 'Network Error' ||
+      error.code === 'ERR_NETWORK'
+    ) {
+      const config = error.config
+      const method = (config?.method ?? 'get').toLowerCase()
+      const isMutation = ['post', 'put', 'patch', 'delete'].includes(method)
+
+      // Skip queueing for auth endpoints and sync endpoints (handled separately)
+      const url = config?.url ?? ''
+      const skipQueue =
+        url.includes('/auth/') ||
+        url.includes('/token/') ||
+        url.includes('/sync/') ||
+        url.includes('/login')
+
+      if (isMutation && config && !skipQueue) {
+        // Build a user-readable label from the URL
+        const label = _buildOfflineLabel(method, url)
+
+        const offlineReq: OfflineHttpRequest = {
+          id: crypto.randomUUID(),
+          method,
+          url,
+          data: config.data ? JSON.parse(typeof config.data === 'string' ? config.data : JSON.stringify(config.data)) : null,
+          createdAt: new Date().toISOString(),
+          label,
+          retryCount: 0,
+          status: 'pending',
+          lastError: '',
+        }
+
+        // Queue it (fire-and-forget, don't block the rejection)
+        enqueueRequest(offlineReq).catch((e) =>
+          console.error('[Offline] Failed to queue request:', e),
+        )
+
+        // Show toast notification (lazy import to avoid circular deps)
+        _showOfflineToast(label)
+
+        console.log(`[Offline] Queued: ${method.toUpperCase()} ${url} → ${offlineReq.id}`)
+
+        return Promise.reject({
+          message: `Sin conexión. "${label}" se guardó y se aplicará automáticamente al volver internet.`,
+          originalError: error,
+          isNetworkError: true,
+          isOfflineQueued: true,
+          offlineRequestId: offlineReq.id,
+        })
+      }
+
+      // Read-only request or auth endpoint — just reject normally
       return Promise.reject({
         message:
           'No se pudo conectar con el servidor. Verificá tu conexión a internet.',
@@ -270,6 +323,62 @@ export async function checkApiConnection(
             : `Error: ${axErr.message || 'Desconocido'}`,
     }
   }
+}
+
+// ═══════════════════════════════════════
+//  OFFLINE QUEUE HELPERS
+// ═══════════════════════════════════════
+
+/** Build a user-friendly label from method + URL */
+function _buildOfflineLabel(method: string, url: string): string {
+  const m = method.toUpperCase()
+  // Extract the resource name from the URL
+  const clean = url.replace(/^\/|\/$/g, '').replace(/\d+/g, '#')
+  const parts = clean.split('/')
+  const resource = parts[0] ?? ''
+
+  const resourceNames: Record<string, string> = {
+    products: 'producto',
+    categories: 'categoría',
+    orders: 'orden',
+    payments: 'pago',
+    marketing: 'marketing',
+    reviews: 'reseña',
+    'site-config': 'configuración',
+    'dollar-rates': 'cotización',
+    'distribution-centers': 'centro de distribución',
+  }
+
+  const name = resourceNames[resource] ?? resource
+
+  switch (m) {
+    case 'POST': return `Crear ${name}`
+    case 'PUT':
+    case 'PATCH': return `Actualizar ${name}`
+    case 'DELETE': return `Eliminar ${name}`
+    default: return `${m} ${name}`
+  }
+}
+
+/** Deduplicated toast: max 1 offline toast every 3 seconds */
+let _lastOfflineToast = 0
+
+function _showOfflineToast(label: string): void {
+  const now = Date.now()
+  if (now - _lastOfflineToast < 3000) return
+  _lastOfflineToast = now
+
+  // Lazy-import to avoid circular dependency (vue-toastification uses Vue app context)
+  import('vue-toastification').then(({ useToast }) => {
+    const toast = useToast()
+    toast.warning(
+      `Sin conexión — "${label}" se guardó localmente y se aplicará automáticamente al reconectarse.`,
+      { timeout: 6000 },
+    )
+  }).catch(() => {
+    // Fallback if toastification isn't available
+    console.warn(`[Offline] ${label} queued for later.`)
+  })
 }
 
 export default apiClient

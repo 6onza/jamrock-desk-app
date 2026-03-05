@@ -70,16 +70,35 @@ export const useOrdersStore = defineStore('orders', () => {
   }
 
   async function changeStatus(id: number | string, status: string) {
-    const updated = await ordersService.updateOrderStatus(id, status)
-    const idx = orders.value.findIndex((o) => o.id === updated.id)
-    if (idx >= 0) orders.value[idx] = updated
-    if (currentOrder.value?.id === updated.id) currentOrder.value = updated
-    await fetchStats()
-    return updated
+    try {
+      const updated = await ordersService.updateOrderStatus(id, status)
+      const idx = orders.value.findIndex((o) => o.id === updated.id)
+      if (idx >= 0) orders.value[idx] = updated
+      if (currentOrder.value?.id === updated.id) currentOrder.value = updated
+      await fetchStats()
+      return updated
+    } catch (err: unknown) {
+      // If queued offline, update UI optimistically
+      if ((err as Record<string, unknown>)?.isOfflineQueued) {
+        const idx = orders.value.findIndex((o) => o.id === Number(id))
+        if (idx >= 0) {
+          orders.value[idx] = { ...orders.value[idx], status } as Order
+        }
+        if (currentOrder.value?.id === Number(id)) {
+          currentOrder.value = { ...currentOrder.value, status } as Order
+        }
+        return orders.value.find((o) => o.id === Number(id)) ?? currentOrder.value
+      }
+      throw err
+    }
   }
 
   async function removeOrder(id: number | string) {
-    await ordersService.deleteOrder(id)
+    try {
+      await ordersService.deleteOrder(id)
+    } catch (err: unknown) {
+      if (!(err as Record<string, unknown>)?.isOfflineQueued) throw err
+    }
     orders.value = orders.value.filter((o) => o.id !== Number(id))
     totalCount.value = Math.max(0, totalCount.value - 1)
     await fetchStats()

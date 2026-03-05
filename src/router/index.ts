@@ -267,6 +267,18 @@ const adminRoutes: RouteRecordRaw[] = [
 
   // Sistema
   {
+    path: '/sync-status',
+    name: 'SyncStatus',
+    component: () => import('@/pages/SyncStatusPage.vue'),
+    meta: {
+      requiresAuth: true,
+      layout: 'admin',
+      title: 'Estado de sincronización',
+      icon: 'RefreshCw',
+      breadcrumb: [{ label: 'Sincronización' }],
+    },
+  },
+  {
     path: '/activity',
     name: 'Activity',
     component: () => import('@/pages/ActivityPage.vue'),

@@ -22,7 +22,7 @@ const PAGE_SIZE = 10
 
 // ── Local UI state ──
 const actionsOpenId = ref<number | null>(null)
-const actionMenuPos = ref({ top: 0, right: 0 })
+const actionMenuPos = ref({ top: 0, bottom: 0, right: 0, openUpwards: false })
 const dateDropdownOpen = ref(false)
 const confirmOpen = ref(false)
 const confirmTitle = ref('')
@@ -157,7 +157,31 @@ function toggleActions(id: number, event: MouseEvent) {
   if (actionsOpenId.value === id) { actionsOpenId.value = null; return }
   const btn = event.currentTarget as HTMLElement
   const rect = btn.getBoundingClientRect()
-  actionMenuPos.value = { top: rect.bottom + 4, right: window.innerWidth - rect.right }
+  const menuHeight = 300 // altura estimada del menú de acciones
+  const padding = 16 // espacio de seguridad
+  const spaceBelow = window.innerHeight - rect.bottom - padding
+  const spaceAbove = rect.top - padding
+  
+  // Decidir si abrir hacia arriba basándose en el espacio disponible
+  const openUpwards = spaceBelow < menuHeight && spaceAbove >= menuHeight
+  
+  if (openUpwards) {
+    // Abrir hacia arriba
+    actionMenuPos.value = {
+      top: 0,
+      bottom: window.innerHeight - rect.top + 4,
+      right: window.innerWidth - rect.right,
+      openUpwards: true
+    }
+  } else {
+    // Abrir hacia abajo (por defecto si hay más espacio abajo o no cabe en ningún lado)
+    actionMenuPos.value = {
+      top: rect.bottom + 4,
+      bottom: 0,
+      right: window.innerWidth - rect.right,
+      openUpwards: false
+    }
+  }
   actionsOpenId.value = id
 }
 
@@ -241,9 +265,9 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
       <template #actions>
         <router-link
           to="/orders/new"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-[15px] font-medium text-white transition-colors hover:bg-primary-600"
         >
-          <Plus :size="16" /> Nueva venta
+          <Plus :size="18" /> Nueva venta
         </router-link>
       </template>
     </PageHeader>
@@ -252,7 +276,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
     <div class="mt-6 flex flex-wrap items-center gap-2">
       <button
         v-for="tab in statusTabs" :key="tab.value"
-        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+        class="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors"
         :class="store.filters.status === tab.value
           ? 'bg-primary-500/15 text-primary-400 ring-1 ring-primary-500/30'
           : 'text-gray-400 hover:bg-surface-700/50 hover:text-gray-200'"
@@ -261,7 +285,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
         {{ tab.label }}
         <span
           v-if="tab.value !== '' && store.stats"
-          class="rounded-full bg-surface-700/60 px-1.5 text-2xs"
+          class="rounded-full bg-surface-700/60 px-1.5 text-[11px]"
         >{{ statusCount(tab.value as OrderStatus) }}</span>
       </button>
     </div>
@@ -269,9 +293,9 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
     <!-- Filters bar -->
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <div class="relative flex-1" style="min-width: 200px; max-width: 320px">
-        <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Search :size="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
         <input
-          type="text" :value="store.filters.search" class="input-field pl-9 text-sm"
+          type="text" :value="store.filters.search" class="input-field pl-10 text-[15px]"
           placeholder="Buscar por nombre, email o #…" @input="onSearch"
         />
       </div>
@@ -279,35 +303,35 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
       <!-- Date dropdown -->
       <div class="relative" data-date-dropdown>
         <button
-          class="inline-flex items-center gap-1.5 rounded-lg border border-surface-700/50 bg-surface-800 px-3 py-2 text-xs text-gray-400 transition-colors hover:text-gray-200"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-surface-700/50 bg-surface-800 px-3 py-2 text-[13px] text-gray-400 transition-colors hover:text-gray-200"
           :class="datePreset ? 'ring-1 ring-primary-500/30 text-primary-400' : ''"
           @click.stop="dateDropdownOpen = !dateDropdownOpen"
         >
-          <Calendar :size="14" /> {{ dateLabel }}
-          <ChevronDown :size="14" :class="dateDropdownOpen ? 'rotate-180' : ''" class="transition-transform" />
+          <Calendar :size="16" /> {{ dateLabel }}
+          <ChevronDown :size="16" :class="dateDropdownOpen ? 'rotate-180' : ''" class="transition-transform" />
         </button>
         <div v-if="dateDropdownOpen" class="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-surface-700/50 bg-surface-800 p-1 shadow-xl">
           <button
             v-for="dp in ['today', 'week', 'month', 'year']" :key="dp"
-            class="w-full rounded-md px-3 py-2 text-left text-xs text-gray-300 hover:bg-surface-700/50"
+            class="w-full rounded-md px-3 py-2 text-left text-[13px] text-gray-300 hover:bg-surface-700/50"
             @click="applyDatePreset(dp)"
           >{{ { today: 'Hoy', week: 'Esta semana', month: 'Este mes', year: 'Este año' }[dp] }}</button>
           <hr class="my-1 border-surface-700/50" />
-          <button class="w-full rounded-md px-3 py-2 text-left text-xs text-gray-300 hover:bg-surface-700/50" @click.stop="showCustomDates = !showCustomDates">
+          <button class="w-full rounded-md px-3 py-2 text-left text-[13px] text-gray-300 hover:bg-surface-700/50" @click.stop="showCustomDates = !showCustomDates">
             Rango personalizado
           </button>
           <div v-if="showCustomDates" class="space-y-2 px-3 py-2">
-            <input v-model="customStart" type="date" class="input-field text-xs" />
-            <input v-model="customEnd" type="date" class="input-field text-xs" />
-            <button class="w-full rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-600" @click="applyCustomDates">Aplicar</button>
+            <input v-model="customStart" type="date" class="input-field text-[13px]" />
+            <input v-model="customEnd" type="date" class="input-field text-[13px]" />
+            <button class="w-full rounded-md bg-primary-500 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-primary-600" @click="applyCustomDates">Aplicar</button>
           </div>
           <hr class="my-1 border-surface-700/50" />
-          <button class="w-full rounded-md px-3 py-2 text-left text-xs text-gray-400 hover:bg-surface-700/50" @click="clearDate">Limpiar fecha</button>
+          <button class="w-full rounded-md px-3 py-2 text-left text-[13px] text-gray-400 hover:bg-surface-700/50" @click="clearDate">Limpiar fecha</button>
         </div>
       </div>
 
-      <button v-if="store.filters.search || store.filters.status || datePreset" class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300" @click="clearAll">
-        <RotateCcw :size="12" /> Limpiar todo
+      <button v-if="store.filters.search || store.filters.status || datePreset" class="inline-flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-300" @click="clearAll">
+        <RotateCcw :size="14" /> Limpiar todo
       </button>
     </div>
 
@@ -320,17 +344,17 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
         <EmptyState title="No hay pedidos" message="No se encontraron pedidos con los filtros seleccionados." />
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full">
           <thead>
             <tr class="border-b border-surface-700/50 bg-surface-800">
-              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">#</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Cliente</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Total</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Productos</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Envío</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">#</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Fecha</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Cliente</th>
+              <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total</th>
+              <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-500">Productos</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Estado</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Envío</th>
+              <th class="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -340,23 +364,23 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
               @click="goDetail(order)"
             >
               <td class="px-4 py-3">
-                <span class="rounded-full bg-primary-500/10 px-2 py-0.5 text-xs font-semibold text-primary-400">#{{ order.id }}</span>
+                <span class="rounded-full bg-primary-500/10 px-2 py-0.5 text-[13px] font-semibold text-primary-400">#{{ order.id }}</span>
               </td>
-              <td class="px-4 py-3 text-gray-400">{{ fmtDate(order.created_at) }}</td>
+              <td class="px-4 py-3 text-[15px] text-gray-400">{{ fmtDate(order.created_at) }}</td>
               <td class="px-4 py-3">
-                <div class="text-gray-200">{{ order.recipient_name || '—' }}</div>
-                <div class="text-2xs text-gray-500">{{ order.customer_email }}</div>
+                <div class="text-[15px] text-gray-200">{{ order.recipient_name || '—' }}</div>
+                <div class="text-[13px] text-gray-500">{{ order.customer_email }}</div>
               </td>
-              <td class="px-4 py-3 text-right font-medium text-gray-200">${{ fmtPrice(order.total) }}</td>
-              <td class="px-4 py-3 text-center text-gray-400">{{ order.products?.length ?? 0 }}</td>
+              <td class="px-4 py-3 text-right text-[15px] text-gray-200">${{ fmtPrice(order.total) }}</td>
+              <td class="px-4 py-3 text-center text-[15px] text-gray-400">{{ order.products?.length ?? 0 }}</td>
               <td class="px-4 py-3"><StatusBadge :status="order.status" size="xs" /></td>
               <td class="px-4 py-3">
-                <span class="text-2xs text-gray-500">{{ order.delivery_type === 'delivery' ? 'Envío' : 'Retiro' }}</span>
+                <span class="text-[13px] text-gray-500">{{ order.delivery_type === 'delivery' ? 'Envío' : 'Retiro' }}</span>
               </td>
               <td class="px-4 py-3 text-right" @click.stop>
                 <div class="relative inline-block" data-actions-menu>
-                  <button class="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-surface-700/50 hover:text-gray-300" @click.stop="toggleActions(order.id, $event)">
-                    <MoreVertical :size="16" />
+                  <button class="rounded-md p-2 text-gray-500 transition-colors hover:bg-surface-700/50 hover:text-gray-300" @click.stop="toggleActions(order.id, $event)">
+                    <MoreVertical :size="18" />
                   </button>
                 </div>
               </td>
@@ -367,16 +391,16 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1 && !store.loading" class="mt-4 flex items-center justify-between text-xs text-gray-500">
+    <div v-if="totalPages > 1 && !store.loading" class="mt-4 flex items-center justify-between text-[13px] text-gray-500">
       <span>Mostrando {{ (currentPage - 1) * PAGE_SIZE + 1 }}–{{ Math.min(currentPage * PAGE_SIZE, store.totalCount) }} de {{ store.totalCount }}</span>
       <div class="flex items-center gap-1">
-        <button class="rounded-md px-2 py-1 hover:bg-surface-700/50 disabled:opacity-30" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">‹ Ant</button>
+        <button class="rounded-md px-3 py-1.5 hover:bg-surface-700/50 disabled:opacity-30" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">‹ Ant</button>
         <button
           v-for="p in pageRange" :key="p"
-          class="rounded-md px-2.5 py-1" :class="p === currentPage ? 'bg-primary-500/15 text-primary-400 font-medium' : 'hover:bg-surface-700/50'"
+          class="rounded-md px-3 py-1.5" :class="p === currentPage ? 'bg-primary-500/15 text-primary-400 font-medium' : 'hover:bg-surface-700/50'"
           @click="goToPage(p)"
         >{{ p }}</button>
-        <button class="rounded-md px-2 py-1 hover:bg-surface-700/50 disabled:opacity-30" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">Sig ›</button>
+        <button class="rounded-md px-3 py-1.5 hover:bg-surface-700/50 disabled:opacity-30" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">Sig ›</button>
       </div>
     </div>
 
@@ -384,35 +408,41 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
     <Teleport to="body">
       <div
         v-if="activeOrder"
-        :style="{ position: 'fixed', top: actionMenuPos.top + 'px', right: actionMenuPos.right + 'px', zIndex: 9999 }"
-        class="w-52 rounded-lg border border-surface-700/50 bg-surface-800 p-1 shadow-xl"
+        :style="{ 
+          position: 'fixed', 
+          top: actionMenuPos.openUpwards ? 'auto' : actionMenuPos.top + 'px',
+          bottom: actionMenuPos.openUpwards ? actionMenuPos.bottom + 'px' : 'auto',
+          right: actionMenuPos.right + 'px', 
+          zIndex: 9999 
+        }"
+        class="w-52 rounded-lg border border-surface-700/50 bg-surface-800 p-1 shadow-xl max-h-[calc(100vh-32px)] overflow-y-auto"
         data-actions-menu
       >
-        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-gray-300 hover:bg-surface-700/50" @click="actionsOpenId = null; goDetail(activeOrder!)">
-          <Eye :size="14" /> Ver detalle
+        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[15px] text-gray-300 hover:bg-surface-700/50" @click="actionsOpenId = null; goDetail(activeOrder!)">
+          <Eye :size="16" /> <span>Ver detalle</span>
         </button>
-        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-gray-300 hover:bg-surface-700/50" @click="actionsOpenId = null; goPrint(activeOrder!.id)">
-          <Printer :size="14" /> Imprimir
+        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[15px] text-gray-300 hover:bg-surface-700/50" @click="actionsOpenId = null; goPrint(activeOrder!.id)">
+          <Printer :size="16" /> <span>Imprimir</span>
         </button>
         <hr class="my-1 border-surface-700/50" />
-        <div class="px-3 py-1 text-2xs font-medium uppercase tracking-wider text-gray-600">Cambiar estado</div>
+        <div class="px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-gray-600">Cambiar estado</div>
         <button
           v-for="t in transitions(activeOrder!)" :key="t"
-          class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-gray-300 hover:bg-surface-700/50 disabled:opacity-30"
+          class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[15px] text-gray-300 hover:bg-surface-700/50 disabled:opacity-30"
           :disabled="statusChangingId === activeOrder!.id"
           @click="handleStatusChange(activeOrder!, t)"
         >{{ ORDER_STATUS_LABELS[t] }}</button>
         <template v-if="activeOrder!.status === 'shipped' && !activeOrder!.shipping_notification_sent">
           <hr class="my-1 border-surface-700/50" />
           <button
-            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-gray-300 hover:bg-surface-700/50 disabled:opacity-30"
+            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[15px] text-gray-300 hover:bg-surface-700/50 disabled:opacity-30"
             :disabled="notifyingId === activeOrder!.id"
             @click="handleNotify(activeOrder!)"
-          ><Truck :size="14" /> {{ notifyingId === activeOrder!.id ? 'Enviando…' : 'Notificar envío' }}</button>
+          ><Truck :size="16" /> {{ notifyingId === activeOrder!.id ? 'Enviando…' : 'Notificar envío' }}</button>
         </template>
         <hr class="my-1 border-surface-700/50" />
-        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-red-400 hover:bg-red-500/10" @click="confirmDelete(activeOrder!)">
-          <Trash2 :size="14" /> Eliminar
+        <button class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-[15px] text-red-400 hover:bg-red-500/10" @click="confirmDelete(activeOrder!)">
+          <Trash2 :size="16" /> Eliminar
         </button>
       </div>
     </Teleport>

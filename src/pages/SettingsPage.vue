@@ -123,7 +123,7 @@ async function handleInstallUpdate() {
 
       <!-- Updates section -->
       <div class="card mt-6 space-y-4">
-        <h3 class="text-sm font-semibold text-gray-200">Actualizaciones</h3>
+        <h3 class="text-[15px] font-semibold text-gray-200">Actualizaciones</h3>
 
         <!-- Check button -->
         <button
@@ -131,17 +131,17 @@ async function handleInstallUpdate() {
           :disabled="updateChecking || !!updateProgress"
           @click="handleCheckUpdates"
         >
-          <RefreshCw v-if="updateChecking" :size="16" class="animate-spin" />
-          <Download v-else :size="16" />
+          <RefreshCw v-if="updateChecking" :size="18" class="animate-spin" />
+          <Download v-else :size="18" />
           {{ updateChecking ? 'Verificando…' : 'Buscar actualizaciones' }}
         </button>
 
         <!-- Result: up to date -->
         <div
           v-if="updateResult && !updateResult.available && !updateResult.error"
-          class="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400"
+          class="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-[15px] text-green-400"
         >
-          <CheckCircle :size="16" />
+          <CheckCircle :size="18" />
           <span>Estás en la última versión (v{{ updateResult.currentVersion }})</span>
         </div>
 
@@ -152,10 +152,10 @@ async function handleInstallUpdate() {
         >
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-blue-300">
+              <p class="text-[15px] font-medium text-blue-300">
                 Nueva versión disponible: v{{ updateResult.version }}
               </p>
-              <p v-if="updateResult.fileSizeDisplay" class="text-xs text-gray-500">
+              <p v-if="updateResult.fileSizeDisplay" class="text-[13px] text-gray-500">
                 Tamaño: {{ updateResult.fileSizeDisplay }}
               </p>
             </div>
@@ -169,7 +169,7 @@ async function handleInstallUpdate() {
 
           <p
             v-if="updateResult.releaseNotes"
-            class="whitespace-pre-line text-xs text-gray-400"
+            class="whitespace-pre-line text-[13px] text-gray-400"
           >
             {{ updateResult.releaseNotes }}
           </p>
@@ -178,14 +178,14 @@ async function handleInstallUpdate() {
             class="btn-primary flex w-full items-center justify-center gap-2"
             @click="handleInstallUpdate"
           >
-            <Download :size="16" />
+            <Download :size="18" />
             Descargar e instalar
           </button>
         </div>
 
         <!-- Progress bar -->
         <div v-if="updateProgress" class="space-y-2">
-          <div class="flex items-center justify-between text-xs text-gray-400">
+          <div class="flex items-center justify-between text-[13px] text-gray-400">
             <span>{{ updateProgress.message }}</span>
             <span>{{ updateProgress.percent }}%</span>
           </div>
@@ -200,9 +200,9 @@ async function handleInstallUpdate() {
         <!-- Error -->
         <div
           v-if="updateError"
-          class="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          class="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-[15px] text-red-400"
         >
-          <AlertTriangle :size="16" />
+          <AlertTriangle :size="18" />
           <span>{{ updateError }}</span>
         </div>
       </div>

@@ -331,7 +331,8 @@ async function handleSubmit() {
     }
 
     const saved = await store.saveProduct(payload, productId.value ?? undefined)
-    if (saved) {
+    if (saved || !store.error) {
+      // saved is null when queued offline but that's OK — navigate back
       originalCurrency.value = form.currency
       showCurrencyChangeAlert.value = false
       currencyConversionApplied.value = false

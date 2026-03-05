@@ -204,7 +204,7 @@ watch(
     <PageHeader title="Productos" subtitle="Gestión del catálogo de productos">
       <template #actions>
         <button
-          class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-500"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-[15px] font-medium text-white transition hover:bg-primary-500"
           @click="createProduct"
         >
           <Plus class="h-4 w-4" />
@@ -222,7 +222,7 @@ watch(
           v-model="searchInput"
           type="text"
           placeholder="Buscar por nombre o marca…"
-          class="w-full rounded-lg border border-surface-600 bg-surface-800 py-2 pl-10 pr-8 text-sm text-white placeholder-surface-400 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          class="w-full rounded-lg border border-surface-600 bg-surface-800 py-2 pl-10 pr-8 text-[15px] text-white placeholder-surface-400 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           @input="onSearchInput"
         />
         <button
@@ -255,7 +255,7 @@ watch(
 
         <!-- Filter toggle -->
         <button
-          class="inline-flex items-center gap-1.5 rounded-lg border border-surface-600 px-3 py-2 text-sm text-surface-300 transition hover:border-primary-500 hover:text-white"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-surface-600 px-3 py-2 text-[15px] text-surface-300 transition hover:border-primary-500 hover:text-white"
           :class="{ 'border-primary-500 text-white': showFilters || hasFilters }"
           @click="showFilters = !showFilters"
         >
@@ -283,10 +283,10 @@ watch(
       <div v-if="showFilters" class="mt-3 grid grid-cols-1 gap-3 rounded-xl border border-surface-700 bg-surface-800/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Category -->
         <div>
-          <label class="mb-1 block text-xs text-surface-400">Categoría</label>
+          <label class="mb-1 block text-[13px] text-surface-400">Categoría</label>
           <select
             :value="store.filters.category_name"
-            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white outline-none focus:border-primary-500"
+            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-[15px] text-white outline-none focus:border-primary-500"
             @change="applyFilter('category_name', ($event.target as HTMLSelectElement).value)"
           >
             <option value="">Todas</option>
@@ -298,10 +298,10 @@ watch(
 
         <!-- Stock -->
         <div>
-          <label class="mb-1 block text-xs text-surface-400">Stock</label>
+          <label class="mb-1 block text-[13px] text-surface-400">Stock</label>
           <select
             :value="store.filters.stock_filter"
-            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white outline-none focus:border-primary-500"
+            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-[15px] text-white outline-none focus:border-primary-500"
             @change="applyFilter('stock_filter', ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="opt in STOCK_FILTER_OPTIONS" :key="opt.value" :value="opt.value">
@@ -312,10 +312,10 @@ watch(
 
         <!-- Price -->
         <div>
-          <label class="mb-1 block text-xs text-surface-400">Precio</label>
+          <label class="mb-1 block text-[13px] text-surface-400">Precio</label>
           <select
             :value="store.filters.price_filter"
-            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white outline-none focus:border-primary-500"
+            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-[15px] text-white outline-none focus:border-primary-500"
             @change="applyFilter('price_filter', ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="opt in PRICE_FILTER_OPTIONS" :key="opt.value" :value="opt.value">
@@ -326,10 +326,10 @@ watch(
 
         <!-- Availability -->
         <div>
-          <label class="mb-1 block text-xs text-surface-400">Visibilidad</label>
+          <label class="mb-1 block text-[13px] text-surface-400">Visibilidad</label>
           <select
             :value="store.filters.is_available"
-            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-sm text-white outline-none focus:border-primary-500"
+            class="w-full rounded-lg border border-surface-600 bg-surface-800 px-3 py-2 text-[15px] text-white outline-none focus:border-primary-500"
             @change="applyFilter('is_available', ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="opt in AVAILABILITY_OPTIONS" :key="opt.value" :value="opt.value">
@@ -341,7 +341,7 @@ watch(
         <!-- Clear filters -->
         <div v-if="hasFilters" class="col-span-full flex justify-end">
           <button
-            class="inline-flex items-center gap-1.5 text-sm text-surface-400 transition hover:text-white"
+            class="inline-flex items-center gap-1.5 text-[15px] text-surface-400 transition hover:text-white"
             @click="clearAllFilters"
           >
             <X class="h-3.5 w-3.5" />
@@ -352,7 +352,7 @@ watch(
     </Transition>
 
     <!-- Results info -->
-    <div class="mt-3 flex items-center justify-between text-xs text-surface-400">
+    <div class="mt-3 flex items-center justify-between text-[13px] text-surface-400">
       <span>
         Mostrando {{ products.length }} de {{ totalCount }} productos
         <span v-if="hasFilters" class="text-primary-400">(filtrados)</span>
@@ -396,9 +396,9 @@ watch(
 
     <!-- ════════════════════ TABLE VIEW ════════════════════ -->
     <div v-else-if="viewMode === 'table'" class="mt-4 overflow-x-auto rounded-xl border border-surface-700 bg-surface-800/50">
-      <table class="w-full text-sm">
+      <table class="w-full">
         <thead>
-          <tr class="border-b border-surface-700 text-left text-xs uppercase text-surface-400">
+          <tr class="border-b border-surface-700 text-left text-[11px] uppercase text-surface-400">
             <th class="px-4 py-3 w-10">
               <input
                 type="checkbox"
@@ -407,11 +407,11 @@ watch(
                 @change="toggleSelectAll"
               />
             </th>
-            <th class="px-4 py-3">Producto</th>
-            <th class="px-4 py-3 text-right">Precio</th>
-            <th class="px-4 py-3 text-center">Stock</th>
-            <th class="px-4 py-3 text-center">Estado</th>
-            <th class="px-4 py-3 text-right">Acciones</th>
+            <th class="px-4 py-3 text-[13px]">Producto</th>
+            <th class="px-4 py-3 text-right text-[13px]">Precio</th>
+            <th class="px-4 py-3 text-center text-[13px]">Stock</th>
+            <th class="px-4 py-3 text-center text-[13px]">Estado</th>
+            <th class="px-4 py-3 text-right text-[13px]">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-surface-700/50">
@@ -434,7 +434,7 @@ watch(
             <!-- Product info -->
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-surface-700">
+                <div class="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-700">
                   <img
                     v-if="product.image"
                     :src="product.image"
@@ -447,12 +447,12 @@ watch(
                 </div>
                 <div class="min-w-0">
                   <button
-                    class="truncate text-sm font-medium text-white hover:text-primary-400 text-left max-w-[260px] block"
+                    class="truncate text-[16px] font-medium text-white hover:text-primary-400 text-left max-w-[300px] block"
                     @click="openProduct(product.id)"
                   >
                     {{ product.name }}
                   </button>
-                  <div class="flex items-center gap-2 text-xs text-surface-400">
+                  <div class="flex items-center gap-2 text-[15px] text-surface-400">
                     <span>{{ product.brand || 'Sin marca' }}</span>
                     <span class="text-surface-600">·</span>
                     <span>{{ product.category_name }}</span>
@@ -464,19 +464,19 @@ watch(
             <!-- Price -->
             <td class="px-4 py-3 text-right whitespace-nowrap">
               <div v-if="product.total_discount > 0" class="flex flex-col items-end gap-0.5">
-                <span class="font-semibold text-emerald-400">${{ formatPrice(product.final_price) }}</span>
-                <span class="text-xs text-surface-500 line-through">${{ formatPrice(product.price) }}</span>
-                <span class="inline-block rounded bg-emerald-500/20 px-1.5 py-0.5 text-2xs font-bold text-emerald-400">
+                <span class="font-semibold text-[15px] text-emerald-400">${{ formatPrice(product.final_price) }}</span>
+                <span class="text-[13px] text-surface-500 line-through">${{ formatPrice(product.price) }}</span>
+                <span class="inline-block rounded bg-emerald-500/20 px-1.5 py-0.5 text-[11px] font-bold text-emerald-400">
                   -{{ Math.round(product.total_discount) }}%
                 </span>
               </div>
-              <span v-else class="font-semibold text-emerald-400">${{ formatPrice(product.price) }}</span>
+              <span v-else class="font-semibold text-[15px] text-emerald-400">${{ formatPrice(product.price) }}</span>
             </td>
 
             <!-- Stock -->
             <td class="px-4 py-3 text-center">
               <span
-                class="inline-flex min-w-[2.5rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium"
+                class="inline-flex min-w-[2.5rem] items-center justify-center rounded-full px-2 py-0.5 text-[13px] font-medium"
                 :class="stockClass(product.stock)"
               >
                 {{ product.stock }}
@@ -486,7 +486,7 @@ watch(
             <!-- Availability -->
             <td class="px-4 py-3 text-center">
               <button
-                class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition"
+                class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-medium transition"
                 :class="product.is_available
                   ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
                   : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'"
@@ -587,26 +587,26 @@ watch(
 
         <!-- Info -->
         <div class="space-y-1">
-          <p class="text-xs text-surface-400">{{ product.category_name }}</p>
+          <p class="text-[13px] text-surface-400">{{ product.category_name }}</p>
           <h3
-            class="cursor-pointer truncate text-sm font-medium text-white hover:text-primary-400"
+            class="cursor-pointer truncate text-[15px] font-medium text-white hover:text-primary-400"
             @click="openProduct(product.id)"
           >
             {{ product.name }}
           </h3>
-          <p class="text-xs text-surface-500">{{ product.brand || 'Sin marca' }}</p>
+          <p class="text-[13px] text-surface-500">{{ product.brand || 'Sin marca' }}</p>
         </div>
 
         <!-- Price + stock -->
         <div class="mt-3 flex items-center justify-between">
           <div>
-            <span v-if="product.total_discount > 0" class="block text-xs text-surface-500 line-through">
+            <span v-if="product.total_discount > 0" class="block text-[13px] text-surface-500 line-through">
               ${{ formatPrice(product.price) }}
             </span>
-            <span class="text-sm font-bold text-emerald-400">${{ formatPrice(product.final_price || product.price) }}</span>
+            <span class="text-[15px] font-bold text-emerald-400">${{ formatPrice(product.final_price || product.price) }}</span>
           </div>
           <span
-            class="rounded-full px-2 py-0.5 text-xs font-medium"
+            class="rounded-full px-2 py-0.5 text-[13px] font-medium"
             :class="stockClass(product.stock)"
           >
             {{ product.stock }} uds
@@ -647,7 +647,7 @@ watch(
 
       <button
         v-if="displayedPages.length > 0 && displayedPages[0] > 1"
-        class="rounded-lg border border-surface-700 px-3 py-1.5 text-sm text-surface-400 hover:text-white"
+        class="rounded-lg border border-surface-700 px-3 py-2 text-[15px] text-surface-400 hover:text-white"
         @click="goToPage(1)"
       >1</button>
       <span v-if="displayedPages.length > 0 && displayedPages[0] > 2" class="px-1 text-surface-600">…</span>
@@ -655,7 +655,7 @@ watch(
       <button
         v-for="page in displayedPages"
         :key="page"
-        class="rounded-lg border px-3 py-1.5 text-sm transition"
+        class="rounded-lg border px-3 py-2 text-[15px] transition"
         :class="page === currentPage
           ? 'border-primary-500 bg-primary-600 font-medium text-white'
           : 'border-surface-700 text-surface-400 hover:text-white'"
@@ -667,7 +667,7 @@ watch(
       <span v-if="displayedPages.length > 0 && displayedPages[displayedPages.length - 1] < totalPages - 1" class="px-1 text-surface-600">…</span>
       <button
         v-if="displayedPages.length > 0 && displayedPages[displayedPages.length - 1] < totalPages"
-        class="rounded-lg border border-surface-700 px-3 py-1.5 text-sm text-surface-400 hover:text-white"
+        class="rounded-lg border border-surface-700 px-3 py-2 text-[15px] text-surface-400 hover:text-white"
         @click="goToPage(totalPages)"
       >{{ totalPages }}</button>
 
@@ -702,8 +702,8 @@ watch(
           <h3 class="mb-4 text-lg font-semibold text-white">
             {{ quickEditField === 'price' ? 'Editar precio' : 'Editar stock' }}
           </h3>
-          <p class="mb-3 text-sm text-surface-400">{{ quickEditProduct?.name }}</p>
-          <label class="mb-1 block text-xs text-surface-400">
+          <p class="mb-3 text-[15px] text-surface-400">{{ quickEditProduct?.name }}</p>
+          <label class="mb-1 block text-[13px] text-surface-400">
             {{ quickEditField === 'price' ? 'Precio ($)' : 'Stock (unidades)' }}
           </label>
           <input
@@ -711,18 +711,18 @@ watch(
             type="number"
             :step="quickEditField === 'price' ? '0.01' : '1'"
             :min="0"
-            class="w-full rounded-lg border border-surface-600 bg-surface-900 px-3 py-2 text-sm text-white outline-none focus:border-primary-500"
+            class="w-full rounded-lg border border-surface-600 bg-surface-900 px-3 py-2 text-[15px] text-white outline-none focus:border-primary-500"
             @keyup.enter="saveQuickEdit"
           />
           <div class="mt-5 flex justify-end gap-2">
             <button
-              class="rounded-lg border border-surface-600 px-4 py-2 text-sm text-surface-300 hover:text-white"
+              class="rounded-lg border border-surface-600 px-4 py-2 text-[15px] text-surface-300 hover:text-white"
               @click="showQuickEdit = false"
             >
               Cancelar
             </button>
             <button
-              class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-500 disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-[15px] font-medium text-white hover:bg-primary-500 disabled:opacity-50"
               :disabled="isQuickSaving"
               @click="saveQuickEdit"
             >

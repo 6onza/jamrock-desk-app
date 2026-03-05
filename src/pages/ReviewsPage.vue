@@ -152,11 +152,11 @@ onMounted(() => loadReviews())
     <PageHeader title="Reseñas" subtitle="Moderación de reseñas de clientes">
       <template #actions>
         <button
-          class="inline-flex items-center gap-1.5 rounded-lg bg-surface-700/50 px-3 py-2 text-sm text-gray-400 hover:bg-surface-700 hover:text-gray-200"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-surface-700/50 px-3 py-2 text-[15px] text-gray-400 hover:bg-surface-700 hover:text-gray-200"
           :disabled="loading"
           @click="loadReviews"
         >
-          <RefreshCw :size="14" :class="loading ? 'animate-spin' : ''" />
+          <RefreshCw :size="16" :class="loading ? 'animate-spin' : ''" />
           Actualizar
         </button>
       </template>
@@ -165,7 +165,7 @@ onMounted(() => loadReviews())
     <!-- Toast message -->
     <Transition name="dialog">
       <div v-if="msg"
-        class="mb-4 rounded-lg border px-4 py-2.5 text-sm"
+        class="mb-4 rounded-lg border px-4 py-2.5 text-[15px]"
         :class="msg.type === 'success' ? 'border-green-500/30 bg-green-500/10 text-green-400' : 'border-red-500/30 bg-red-500/10 text-red-400'"
       >{{ msg.text }}</div>
     </Transition>
@@ -175,7 +175,7 @@ onMounted(() => loadReviews())
       <div class="flex rounded-lg border border-surface-700/50 p-0.5">
         <button
           v-for="tab in tabs" :key="tab.key"
-          class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+          class="rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors"
           :class="activeTab === tab.key ? 'bg-primary-500/15 text-primary-400' : 'text-gray-500 hover:text-gray-300'"
           @click="activeTab = tab.key"
         >
@@ -195,12 +195,12 @@ onMounted(() => loadReviews())
         </button>
       </div>
       <div class="relative flex-1">
-        <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
         <input v-model="searchText" placeholder="Buscar por producto, usuario o comentario…"
-          class="w-full rounded-lg border border-surface-700/50 bg-surface-800 py-2 pl-8 pr-3 text-sm text-gray-200 placeholder-gray-600 focus:border-primary-500/50 focus:outline-none" />
+          class="w-full rounded-lg border border-surface-700/50 bg-surface-800 py-2 pl-9 pr-3 text-[15px] text-gray-200 placeholder-gray-600 focus:border-primary-500/50 focus:outline-none" />
       </div>
       <select v-model="sortBy"
-        class="rounded-lg border border-surface-700/50 bg-surface-800 px-3 py-2 text-xs text-gray-300 focus:border-primary-500/50 focus:outline-none"
+        class="rounded-lg border border-surface-700/50 bg-surface-800 px-3 py-2 text-[13px] text-gray-300 focus:border-primary-500/50 focus:outline-none"
       >
         <option value="newest">Más recientes</option>
         <option value="oldest">Más antiguas</option>
@@ -222,7 +222,7 @@ onMounted(() => loadReviews())
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <!-- Product + Username -->
-            <div class="flex items-center gap-2 text-sm">
+            <div class="flex items-center gap-2 text-[15px]">
               <span class="font-medium text-gray-200">{{ r.product_name || `Producto #${r.product}` }}</span>
               <span class="text-gray-600">·</span>
               <span class="text-gray-400">{{ r.username }}</span>
@@ -230,17 +230,17 @@ onMounted(() => loadReviews())
             <!-- Stars -->
             <div class="mt-1 flex items-center gap-0.5">
               <Star
-                v-for="s in 5" :key="s" :size="14"
+                v-for="s in 5" :key="s" :size="16"
                 :class="s <= r.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-700'"
               />
-              <span class="ml-1.5 text-xs text-gray-500">{{ r.rating }}/5</span>
+              <span class="ml-1.5 text-[13px] text-gray-500">{{ r.rating }}/5</span>
             </div>
             <!-- Comment -->
-            <p class="mt-2 text-sm leading-relaxed text-gray-300">{{ r.comment }}</p>
+            <p class="mt-2 text-[15px] leading-relaxed text-gray-300">{{ r.comment }}</p>
             <!-- Meta -->
             <div class="mt-2 flex items-center gap-3">
               <StatusBadge :status="reviewStatus(r)" />
-              <span class="text-2xs text-gray-600">{{ fmtDate(r.created_at) }}</span>
+              <span class="text-[11px] text-gray-600">{{ fmtDate(r.created_at) }}</span>
             </div>
           </div>
           <!-- Actions -->

@@ -1,18 +1,28 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search, Plus, Minus, Trash2, ShoppingCart,
-  User, ArrowLeft, Tag, Check,
+  User, ArrowLeft, Tag, Check, WifiOff, Cloud,
 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { getProducts } from '@/services/products'
 import { createOrder } from '@/services/orders'
+import { searchCachedProducts } from '@/services/offlineDb'
+import { queueOfflineOrder } from '@/services/offlineQueue'
+import { useOfflineStore } from '@/stores/offline'
+import { isOnline } from '@/services/connectionDetector'
 import type { ProductListItem } from '@/types/products'
+import type { SyncPullProduct } from '@/types/offline'
 import type { CreateOrderItemData, DeliveryType, PaymentMethod } from '@/types/orders'
 
 const router = useRouter()
+const offline = useOfflineStore()
+
+onMounted(() => {
+  offline.init()
+})
 
 // ── Product search ──
 const searchQuery = ref('')
@@ -22,7 +32,7 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 // ── Cart ──
 interface CartItem {
-  product: ProductListItem
+  product: ProductListItem | SyncPullProduct
   quantity: number
   unitPrice: number
   selectedVariants: Record<string, string>
@@ -47,16 +57,39 @@ const couponCode = ref('')
 // ── State ──
 const submitting = ref(false)
 const submitError = ref('')
+const offlineSuccess = ref(false)
+const offlineOperationId = ref('')
 
-// ── Product search ──
+// ── Product search (online → API, offline → local cache) ──
 function onSearchInput() {
   clearTimeout(searchTimer)
   if (searchQuery.value.length < 2) { searchResults.value = []; return }
   searchTimer = setTimeout(async () => {
     searching.value = true
     try {
-      const res = await getProducts({ search: searchQuery.value, page: 1, page_size: 10, is_available: 'true' })
-      searchResults.value = res.results
+      if (isOnline()) {
+        // Online: search via API
+        const res = await getProducts({ search: searchQuery.value, page: 1, page_size: 10, is_available: 'true' })
+        searchResults.value = res.results
+      } else {
+        // Offline: search local cache
+        const cached = await searchCachedProducts(searchQuery.value, 10)
+        // Map SyncPullProduct to a shape compatible with ProductListItem display
+        searchResults.value = cached.map(p => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          price: p.price,
+          final_price: p.final_price,
+          stock: p.stock,
+          discount: p.discount,
+          total_discount: p.total_discount,
+          image: p.image,
+          category_name: p.category_name,
+          currency: p.currency,
+          is_available: p.is_available,
+        } as unknown as ProductListItem))
+      }
     } catch { searchResults.value = [] }
     finally { searching.value = false }
   }, 300)
@@ -84,9 +117,10 @@ function adjustCartQty(idx: number, delta: number) {
 const subtotal = computed(() => cart.value.reduce((s, i) => s + i.unitPrice * i.quantity, 0))
 const total = computed(() => subtotal.value)
 
-// ── Submit ──
+// ── Submit (online → API, offline → local queue) ──
 async function handleSubmit() {
   submitError.value = ''
+  offlineSuccess.value = false
   if (cart.value.length === 0) { submitError.value = 'Agrega al menos un producto al carrito.'; return }
   if (!customerName.value || !customerEmail.value || !customerPhone.value) {
     submitError.value = 'Completa los datos del cliente (nombre, email, teléfono).'; return
@@ -98,7 +132,7 @@ async function handleSubmit() {
       variants: Object.keys(item.selectedVariants).length ? item.selectedVariants : null,
       variants_label: item.variantsLabel,
     }))
-    const order = await createOrder({
+    const orderPayload = {
       recipient_name: customerName.value, customer_email: customerEmail.value,
       customer_phone: customerPhone.value, customer_dni_cuit: customerDni.value || undefined,
       delivery_type: deliveryType.value, payment_method: paymentMethod.value,
@@ -106,8 +140,36 @@ async function handleSubmit() {
       shipping_city: shippingCity.value || undefined, shipping_postal_code: shippingPostalCode.value || undefined,
       shipping_address: shippingAddress.value || undefined,
       products_data: productsData, coupon_code: couponCode.value || undefined,
-    })
-    router.push(`/orders/${order.id}`)
+    }
+
+    if (isOnline()) {
+      // ── ONLINE: create directly via API ──
+      const order = await createOrder(orderPayload)
+      router.push(`/orders/${order.id}`)
+    } else {
+      // ── OFFLINE: save to local queue ──
+      const opId = await queueOfflineOrder({
+        ...orderPayload,
+        offline_total: total.value,
+        offline_subtotal: subtotal.value,
+      })
+      offlineOperationId.value = opId
+      offlineSuccess.value = true
+
+      // Deduct stock locally in cache so subsequent offline sales see updated stock
+      // (best-effort, the server will reconcile)
+
+      // Reset form after offline save
+      cart.value = []
+      customerName.value = ''
+      customerEmail.value = ''
+      customerPhone.value = ''
+      customerDni.value = ''
+      couponCode.value = ''
+
+      // Refresh offline store counts
+      await offline.loadRecentOperations()
+    }
   } catch (e) { submitError.value = (e as Error).message || 'Error al crear la orden.' }
   finally { submitting.value = false }
 }
@@ -124,6 +186,33 @@ function fmtPrice(n: number) { return Math.round(n).toLocaleString('es-AR') }
         </button>
       </template>
     </PageHeader>
+
+    <!-- Offline banner -->
+    <div v-if="offline.isOffline" class="mt-4 flex items-center gap-3 rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3">
+      <WifiOff :size="18" class="text-orange-400 flex-shrink-0" />
+      <div>
+        <p class="text-sm font-medium text-orange-300">Modo offline activo</p>
+        <p class="text-xs text-orange-400/80">Las ventas se guardarán localmente y se sincronizarán automáticamente cuando vuelva la conexión.</p>
+      </div>
+    </div>
+
+    <!-- Offline sale success -->
+    <div v-if="offlineSuccess" class="mt-4 flex items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3">
+      <Cloud :size="18" class="text-blue-400 flex-shrink-0" />
+      <div class="flex-1">
+        <p class="text-sm font-medium text-blue-300">Venta guardada localmente</p>
+        <p class="text-xs text-blue-400/80">
+          Se sincronizará automáticamente al volver la conexión.
+          ID: {{ offlineOperationId.slice(0, 8) }}…
+        </p>
+      </div>
+      <button class="rounded-lg bg-blue-500/20 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/30" @click="offlineSuccess = false">
+        Nueva venta
+      </button>
+      <button class="rounded-lg border border-blue-500/30 px-3 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-500/10" @click="router.push('/sync-status')">
+        Ver cola
+      </button>
+    </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-5">
       <!-- Left: Product search + Cart -->
@@ -252,6 +341,7 @@ function fmtPrice(n: number) { return Math.round(n).toLocaleString('es-AR') }
             :disabled="submitting || cart.length === 0" @click="handleSubmit"
           >
             <span v-if="submitting">Creando orden…</span>
+            <span v-else-if="offline.isOffline" class="inline-flex items-center gap-1.5"><WifiOff :size="16" /> Guardar venta offline</span>
             <span v-else class="inline-flex items-center gap-1.5"><Check :size="16" /> Crear orden</span>
           </button>
         </div>

@@ -93,6 +93,7 @@ const navigation: NavGroup[] = [
     title: 'Sistema',
     icon: Settings,
     items: [
+      { label: 'Sincronización', to: '/sync-status', icon: Activity },
       { label: 'Actividad', to: '/activity', icon: Activity },
       { label: 'Configuración tienda', to: '/store-settings', icon: Store },
       { label: 'Reseñas', to: '/reviews', icon: Star },
